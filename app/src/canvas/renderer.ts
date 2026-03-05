@@ -8,26 +8,25 @@ import type { AnyCanvasObject, Viewport } from '@/types/canvas'
 import { reflow, tokenise, getHandlePositions, DEFAULT_REFLOW_CONFIG } from '@/engine/reflow'
 import { TOOL_STYLES } from './toolStyles'
 
-interface RenderState {
-  objects:    AnyCanvasObject[]
-  selectedId: string | null
-  viewport:   Viewport
-}
-
-// Sample text — replaced by real document content in Phase 2
-const SAMPLE_TEXT = `Begin writing here. Place objects on the canvas and watch the text reflow around them in real time.
+const PLACEHOLDER_TEXT = `Begin writing here. Place objects on the canvas and watch the text reflow around them in real time.
 
 This is OmniOffice — one canvas, every tool, no walls between them. Drag any object. Resize it. The text moves with it instantly.
 
 Every capability is available everywhere on this canvas. Citations, math, code, charts, databases, diagrams — all native tools you place and use in place. The page edge is the only law. Everything inside it is yours.`
 
-const WORDS = tokenise(SAMPLE_TEXT)
+interface RenderState {
+  objects:    AnyCanvasObject[]
+  selectedId: string | null
+  viewport:   Viewport
+  bodyText:   string
+  textEditMode: boolean  // reserved — used by CanvasRenderer for textarea overlay
+}
 
 export function renderCanvas(
   ctx: CanvasRenderingContext2D,
   state: RenderState
 ): void {
-  const { objects, selectedId, viewport } = state
+  const { objects, selectedId, viewport, bodyText } = state
   const { zoom, panX, panY } = viewport
   const W = ctx.canvas.width
   const H = ctx.canvas.height
@@ -84,11 +83,13 @@ export function renderCanvas(
     canvasHeight: paperY + paperH,
   }
 
-  const segments = reflow(WORDS, objects, reflowCfg)
+  const sourceText = bodyText.trim() ? bodyText : PLACEHOLDER_TEXT
+  const words = tokenise(sourceText)
+  const segments = reflow(words, objects, reflowCfg)
 
   // ── Render text ────────────────────────────────────────
   ctx.font         = `${reflowCfg.fontSize}px Georgia, serif`
-  ctx.fillStyle    = '#2c2c2c'
+  ctx.fillStyle    = bodyText.trim() ? '#2c2c2c' : 'rgba(44,44,44,0.35)'
   ctx.textBaseline = 'top'
   for (const seg of segments) {
     ctx.fillText(seg.text, seg.x, seg.y)

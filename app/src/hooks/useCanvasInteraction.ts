@@ -27,7 +27,7 @@ export function useCanvasInteraction(canvasRef: RefObject<HTMLCanvasElement>) {
     e.preventDefault()
     canvasRef.current?.setPointerCapture(e.pointerId)
     const { x, y } = canvasPos(e)
-    const { mode, selectedId, objects, select, setMode, setDrag, setResize, addObject, bringToFront } = store
+    const { mode, selectedId, objects, select, setDrag, setResize, bringToFront } = store
 
     // Pan mode
     if (mode === 'pan') {
@@ -60,14 +60,16 @@ export function useCanvasInteraction(canvasRef: RefObject<HTMLCanvasElement>) {
       select(hit.id)
       bringToFront(hit.id)
       setDrag({ objectId: hit.id, startX: x, startY: y, offsetX: x - hit.x, offsetY: y - hit.y })
+      store.setTextEditMode(false)
     } else {
       select(null)
+      store.setTextEditMode(true)
     }
   }, [store, canvasRef])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     const { x, y } = canvasPos(e)
-    const { drag, resize, updateObject, setViewport, viewport } = store
+    const { drag, resize, updateObject, setViewport } = store
 
     if (resize) {
       const { origX, origY, origW, origH, handleX, handleY, startX, startY } = resize

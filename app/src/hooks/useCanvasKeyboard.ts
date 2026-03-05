@@ -19,6 +19,7 @@ export function useCanvasKeyboard() {
 
         case 'Escape':
           useCanvasStore.getState().select(null)
+          useCanvasStore.getState().setTextEditMode(false)
           setMode('select')
           break
 

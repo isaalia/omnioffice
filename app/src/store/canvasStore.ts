@@ -14,6 +14,14 @@ interface CanvasState {
   doc: CanvasDocument | null
   objects: AnyCanvasObject[]
 
+  // Body text
+  bodyText: string
+  setBodyText: (text: string) => void
+
+  // Text editing mode
+  textEditMode: boolean
+  setTextEditMode: (active: boolean) => void
+
   // Selection
   selectedId: string | null
   select: (id: string | null) => void
@@ -60,15 +68,19 @@ const ZOOM_MIN  = 0.1
 const ZOOM_MAX  = 4.0
 
 export const useCanvasStore = create<CanvasState>()(
-  subscribeWithSelector((set, get) => ({
-    doc:        null,
-    objects:    [],
-    selectedId: null,
-    mode:       'select',
-    drag:       null,
-    resize:     null,
-    viewport:   DEFAULT_VIEWPORT,
+  subscribeWithSelector((set, _get) => ({
+    doc:          null,
+    objects:      [],
+    bodyText:     '',
+    textEditMode: false,
+    selectedId:   null,
+    mode:         'select',
+    drag:         null,
+    resize:       null,
+    viewport:     DEFAULT_VIEWPORT,
 
+    setBodyText:     (text)   => set({ bodyText: text }),
+    setTextEditMode: (active) => set({ textEditMode: active }),
     select:    (id)   => set({ selectedId: id }),
     setMode:   (mode) => set({ mode }),
     setDrag:   (drag) => set({ drag }),

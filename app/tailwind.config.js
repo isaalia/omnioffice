@@ -6,7 +6,6 @@ export default {
       colors: {
         ink:    '#0a0a0c',
         canvas: '#faf8f3',
-        red:    '#c0392b',
       },
       fontFamily: {
         sans:  ['DM Sans', 'system-ui', 'sans-serif'],
