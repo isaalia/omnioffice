@@ -97,17 +97,50 @@ export interface CalloutObject extends CanvasObject {
   textColor: string
 }
 
+// ── Spreadsheet object ────────────────────────────────────
+export interface SpreadsheetObject extends CanvasObject {
+  type:     'spreadsheet'
+  cells:    Record<string, string>  // "r:c" → raw value (prefix "=" for formula)
+  colCount: number
+  rowCount: number
+}
+
+// ── Code object ───────────────────────────────────────────
+export interface CodeObject extends CanvasObject {
+  type:     'code'
+  code:     string
+  language: string
+}
+
+// ── Ink types ─────────────────────────────────────────────
+export type InkPoint  = [number, number]   // world-space coords
+
+export interface InkStroke {
+  points: InkPoint[]
+  color:  string
+  width:  number
+}
+
+export interface InkObject extends CanvasObject {
+  type:    'ink'
+  strokes: InkStroke[]
+}
+
 // ── Union of all object types ─────────────────────────────
 export type AnyCanvasObject =
   | WordProcessorObject
   | ImageObject
   | CalloutObject
+  | SpreadsheetObject
+  | CodeObject
+  | InkObject
   | CanvasObject   // fallback for unimplemented types
 
 // ── Canvas document ───────────────────────────────────────
 export interface CanvasDocument {
   id: string
   title: string
+  bodyText: string
   objects: AnyCanvasObject[]
   layers: Layer[]
   pageSize: PageSize

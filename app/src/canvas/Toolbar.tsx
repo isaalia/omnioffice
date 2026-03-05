@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCanvasStore } from '@/store/canvasStore'
 import { useAuthStore } from '@/store/authStore'
 import { createObject } from '@/lib/document'
@@ -28,6 +30,7 @@ const TOOL_BUTTONS: ToolButton[] = [
 const MODE_BUTTONS: Array<{ label: string; mode: InteractionMode; icon: string }> = [
   { label: 'Select', mode: 'select', icon: '↖' },
   { label: 'Pan',    mode: 'pan',    icon: '✥'  },
+  { label: 'Ink',    mode: 'ink',    icon: '✏'  },
 ]
 
 export function Toolbar() {
@@ -35,16 +38,27 @@ export function Toolbar() {
     mode, setMode, selectedId, objects,
     addObject, removeObject,
     zoomIn, zoomOut, zoomReset,
-    viewport,
+    viewport, doc, setDocTitle,
   } = useCanvasStore()
 
   const { signOut } = useAuthStore()
-  const selected = objects.find(o => o.id === selectedId)
+  const navigate  = useNavigate()
+  const selected  = objects.find(o => o.id === selectedId)
+  const [copied, setCopied] = useState(false)
+
+  function handleShare() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
 
   function placeTool(type: ToolType) {
+    // paperX in world coords — same formula as renderer.ts
+    const paperX = (viewport.width / viewport.zoom - 900) / 2
     const obj = createObject(type, {
-      x: 200 + Math.random() * 200,
-      y: 200 + Math.random() * 150,
+      x: paperX + 60 + Math.random() * 560,
+      y: 120 + Math.random() * 200,
     })
     addObject(obj)
     setMode('select')
@@ -62,10 +76,35 @@ export function Toolbar() {
   return (
     <div className="flex items-center gap-1 px-3 h-11 bg-[#16213e] border-b border-[#0f3460] shrink-0 no-select overflow-x-auto">
 
+      {/* Back to dashboard */}
+      <button
+        onClick={() => navigate('/')}
+        className="text-[#4a5568] hover:text-[#a8b2d8] transition-colors shrink-0 text-sm mr-1"
+        title="Back to dashboard"
+      >
+        ←
+      </button>
+
       {/* Logo */}
       <span className="font-serif text-white font-bold text-base tracking-tight mr-2 shrink-0">
         Omni<span className="text-red-500">Office</span>
       </span>
+
+      <div className="w-px h-5 bg-[#0f3460] mx-1 shrink-0" />
+
+      {/* Document title */}
+      {doc && (
+        <input
+          value={doc.title}
+          onChange={e => setDocTitle(e.target.value)}
+          className="bg-transparent text-[#a8b2d8] text-xs font-medium
+                     border-b border-transparent hover:border-[#0f3460]
+                     focus:border-red-500 focus:outline-none
+                     w-36 shrink-0 text-center"
+          title="Document title"
+          spellCheck={false}
+        />
+      )}
 
       <div className="w-px h-5 bg-[#0f3460] mx-1 shrink-0" />
 
@@ -144,6 +183,17 @@ export function Toolbar() {
         className="px-2 py-1 rounded text-xs text-[#a8b2d8] hover:bg-[#0f3460] hover:text-white transition-colors shrink-0"
         title="Zoom in (+)"
       >+</button>
+
+      <div className="w-px h-5 bg-[#0f3460] mx-1 shrink-0" />
+
+      {/* Share */}
+      <button
+        onClick={handleShare}
+        className="px-2.5 py-1 rounded text-xs text-[#a8b2d8] hover:bg-[#0f3460] hover:text-white transition-colors shrink-0"
+        title="Copy share link"
+      >
+        {copied ? '✓ Copied' : '⬡ Share'}
+      </button>
 
       <div className="w-px h-5 bg-[#0f3460] mx-1 shrink-0" />
 

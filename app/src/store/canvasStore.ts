@@ -7,6 +7,9 @@ import type {
   Viewport,
   DragState,
   ResizeState,
+  InkPoint,
+  InkStroke,
+  InkObject,
 } from '@/types/canvas'
 
 interface CanvasState {
@@ -18,9 +21,13 @@ interface CanvasState {
   bodyText: string
   setBodyText: (text: string) => void
 
-  // Text editing mode
+  // Text editing mode (canvas body text)
   textEditMode: boolean
   setTextEditMode: (active: boolean) => void
+
+  // Object content editing
+  editingObjectId: string | null
+  setEditingObjectId: (id: string | null) => void
 
   // Selection
   selectedId: string | null
@@ -53,6 +60,15 @@ interface CanvasState {
 
   // Document
   setDoc: (doc: CanvasDocument) => void
+  setDocTitle: (title: string) => void
+
+  // Ink
+  inkObjectId: string | null
+  liveStroke: InkPoint[] | null
+  setInkObjectId: (id: string | null) => void
+  startLiveStroke: (pt: InkPoint) => void
+  extendLiveStroke: (pt: InkPoint) => void
+  commitLiveStroke: (color: string, width: number) => void
 }
 
 const DEFAULT_VIEWPORT: Viewport = {
@@ -69,18 +85,22 @@ const ZOOM_MAX  = 4.0
 
 export const useCanvasStore = create<CanvasState>()(
   subscribeWithSelector((set, _get) => ({
-    doc:          null,
-    objects:      [],
-    bodyText:     '',
-    textEditMode: false,
-    selectedId:   null,
-    mode:         'select',
-    drag:         null,
-    resize:       null,
-    viewport:     DEFAULT_VIEWPORT,
+    doc:             null,
+    objects:         [],
+    bodyText:        '',
+    textEditMode:    false,
+    editingObjectId: null,
+    selectedId:      null,
+    mode:            'select',
+    drag:            null,
+    resize:          null,
+    viewport:        DEFAULT_VIEWPORT,
+    inkObjectId:     null,
+    liveStroke:      null,
 
-    setBodyText:     (text)   => set({ bodyText: text }),
-    setTextEditMode: (active) => set({ textEditMode: active }),
+    setBodyText:        (text)   => set({ bodyText: text }),
+    setTextEditMode:    (active) => set({ textEditMode: active }),
+    setEditingObjectId: (id)     => set({ editingObjectId: id }),
     select:    (id)   => set({ selectedId: id }),
     setMode:   (mode) => set({ mode }),
     setDrag:   (drag) => set({ drag }),
@@ -118,8 +138,10 @@ export const useCanvasStore = create<CanvasState>()(
 
     removeObject: (id) =>
       set(state => ({
-        objects:    state.objects.filter(o => o.id !== id),
-        selectedId: state.selectedId === id ? null : state.selectedId,
+        objects:         state.objects.filter(o => o.id !== id),
+        selectedId:      state.selectedId      === id ? null : state.selectedId,
+        editingObjectId: state.editingObjectId === id ? null : state.editingObjectId,
+        inkObjectId:     state.inkObjectId     === id ? null : state.inkObjectId,
       })),
 
     bringToFront: (id) =>
@@ -135,6 +157,42 @@ export const useCanvasStore = create<CanvasState>()(
       }),
 
     setDoc: (doc) =>
-      set({ doc, objects: doc.objects }),
+      set(state => {
+        const inkObj = doc.objects.find(o => o.type === 'ink')
+        return {
+          doc,
+          objects:     doc.objects,
+          bodyText:    doc.bodyText ?? '',
+          inkObjectId: inkObj ? inkObj.id : state.inkObjectId,
+        }
+      }),
+
+    setDocTitle: (title) =>
+      set(state => state.doc ? { doc: { ...state.doc, title } } : {}),
+
+    // ── Ink actions ────────────────────────────────────────
+    setInkObjectId: (id) => set({ inkObjectId: id }),
+
+    startLiveStroke: (pt) => set({ liveStroke: [pt] }),
+
+    extendLiveStroke: (pt) =>
+      set(state => ({
+        liveStroke: state.liveStroke ? [...state.liveStroke, pt] : [pt],
+      })),
+
+    commitLiveStroke: (color, width) =>
+      set(state => {
+        const { liveStroke, inkObjectId, objects } = state
+        if (!liveStroke || liveStroke.length < 2 || !inkObjectId) {
+          return { liveStroke: null }
+        }
+        const stroke: InkStroke = { points: liveStroke, color, width }
+        const updatedObjects = objects.map(o => {
+          if (o.id !== inkObjectId) return o
+          const inkObj = o as InkObject
+          return { ...inkObj, strokes: [...inkObj.strokes, stroke] }
+        })
+        return { liveStroke: null, objects: updatedObjects }
+      }),
   }))
 )
