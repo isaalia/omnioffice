@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: #faf8f3;
+  color: #1a1a20;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent text selection on canvas UI elements */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Canvas cursor */
+.canvas-cursor-crosshair { cursor: crosshair; }
+.canvas-cursor-grab       { cursor: grab; }
+.canvas-cursor-grabbing   { cursor: grabbing; }
+.canvas-cursor-resize     { cursor: nwse-resize; }
+.canvas-cursor-text       { cursor: text; }
